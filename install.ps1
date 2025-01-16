@@ -20,20 +20,23 @@ function Download-VisualStudioInstaller {
     Write-Host "Downloading Visual Studio installer from $url..."
 
     try {
-        # Download the file and check if the response is successful
-        $response = Invoke-WebRequest -Uri $url -OutFile $installerPath -ErrorAction Stop
+        # Use -UseBasicParsing for better compatibility with older or non-standard redirects
+        $response = Invoke-WebRequest -Uri $url -OutFile $installerPath -UseBasicParsing -ErrorAction Stop
 
         if ($response.StatusCode -ne 200) {
+            Write-Host "Response: $response"
             Write-Error "Failed to download Visual Studio installer. HTTP Status: $($response.StatusCode)"
             exit
         }
     } catch {
         Write-Error "Failed to download Visual Studio installer: $_"
+        exit
     }
 
     # Check if the installer exists and has a valid file size
     if (-not (Test-Path $installerPath)) {
         Write-Error "Installer not downloaded successfully."
+        exit
     }
 
     $fileSize = (Get-Item $installerPath).length
@@ -41,6 +44,7 @@ function Download-VisualStudioInstaller {
     
     if ($fileSize -lt 1000000) {  # Minimum size check (1MB)
         Write-Error "The installer file appears to be corrupted or incomplete. File size: $fileSize bytes."
+        exit
     }
 
     Write-Host "Installer downloaded successfully to $installerPath"
