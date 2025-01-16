@@ -3,7 +3,7 @@ param (
     [string]$VisualStudioVersion = 'latest',
 
     [Parameter(Mandatory)]
-    [string]$InstallDrive = 'N:'
+    [string]$InstallDrive = 'C:'
 )
 
 # Function to download the Visual Studio installer
@@ -12,11 +12,19 @@ function Download-VisualStudioInstaller {
         [string]$Version
     )
 
-    $url = "https://aka.ms/vs/$Version/install"
+    # Direct URL to the Visual Studio installer for the latest version (change for specific versions)
+    $url = "https://aka.ms/vs/17/release/vs_installer.exe"
+    
     $installerPath = Join-Path -Path $env:TEMP -ChildPath 'vs_installer.exe'
 
-    Write-Host "Downloading Visual Studio installer..."
-    Invoke-WebRequest -Uri $url -OutFile $installerPath
+    Write-Host "Downloading Visual Studio installer from $url..."
+
+    try {
+        Invoke-WebRequest -Uri $url -OutFile $installerPath -ErrorAction Stop
+    } catch {
+        Write-Error "Failed to download Visual Studio installer: $_"
+        exit
+    }
 
     # Check if the installer exists and has a valid file size
     if (-not (Test-Path $installerPath)) {
@@ -26,13 +34,13 @@ function Download-VisualStudioInstaller {
 
     $fileSize = (Get-Item $installerPath).length
     if ($fileSize -lt 1000000) {  # Minimum size check (1MB)
-        Write-Error "The installer file appears to be corrupted or incomplete."
+        Write-Error "The installer file appears to be corrupted or incomplete. File size: $fileSize bytes."
         exit
     }
 
+    Write-Host "Installer downloaded successfully to $installerPath"
     return $installerPath
 }
-
 # Function to install Visual Studio
 function Install-VisualStudio {
     param (
